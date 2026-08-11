@@ -41,10 +41,6 @@ const brickSchema = new Schema(
   }
 );
 
-brickSchema.method('getStock', function () {
-  return brickSchema.stock;
-})
+const Brick = mongoose.model('Brick', brickSchema)
 
-const Bricks = mongoose.model('Bricks', brickSchema)
-
-export default Bricks
+export default Brick

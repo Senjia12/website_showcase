@@ -9,10 +9,10 @@ app.use(cors({
 }));
 
 // routes import
-import productRouter from './routes/product.routes.js';
+import brickRouter from './routes/brick.routes.js';
 
 // routes declaration
-app.use("/view", productRouter);
+app.use("/bricks", brickRouter);
 
 // 404 fallback
 app.use((req, res) => {
