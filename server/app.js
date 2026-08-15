@@ -10,9 +10,11 @@ app.use(cors({
 
 // routes import
 import brickRouter from './routes/brick.routes.js';
+import cartRouter from './routes/cart.routes.js'
 
 // routes declaration
 app.use("/bricks", brickRouter);
+app.use("/shop", cartRouter);
 
 // 404 fallback
 app.use((req, res) => {

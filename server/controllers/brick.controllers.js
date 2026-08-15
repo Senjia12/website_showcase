@@ -78,7 +78,47 @@ const createBrick = async (req, res) => {
   }
 };
 
+const getAllBricks = async (req, res) => {
+  try {
+    const bricks = await Brick.find();
+    res.status(200).json(posts);
+
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal server error"
+    });
+  }
+};
+
+const updateBrick = async (req, res) => {
+  try {
+    // making sure the body isnt empty
+    // /!\ {} is truthy so we can't use just use req.body.length cuz js behaves differently with arrays and strings
+    if(Object.keys(req.body).length === 0) {// if 0 then none of the fields has a value   Object.keys converts object into an array of keys
+      return res.status(400).json({
+        message: "No data provided for update"
+      });
+    };
+    const brick = await Post.findByIdAndUpdate(req.params.id, req.body, {new: true});
+
+    if (!post) return res.status(404).json({
+      message: "Post not found"
+    });
+
+    res.status(200).json({
+      message: "Post updated successfully", post
+    })
+
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal server error"
+    });
+  }
+}
+
 export {
   brickGetInfo,
-  createBrick
+  createBrick,
+  getAllBricks,
+  updateBrick
 }
