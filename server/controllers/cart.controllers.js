@@ -32,23 +32,21 @@ const getCart = async (req, res) => { // !!! to display the cart actually
 const addToCart = async (req, res) => {
   try {
     // sessions and accounts not implemented yet
-    const { existingCartId, productId, amount} = req.body;
+    const { existingCartId, product, amount} = req.body;
     let myCart = await Cart.findById(existingCartId);
 
     if (!myCart) {
       myCart = new Cart({ items: [], totalPrice: 0 }); // ??? postman method post/get
     }
 
-    if (!productId || !Number.isInteger(amount) || amount < 1) {
-      return res.status(400).json({ message: `productId (${productId}) and a positive integer amount (${amount}) are required` });
+    if (!product || !Number.isInteger(amount) || amount < 1) {
+      return res.status(400).json({ message: `product (${product}) and a positive integer amount (${amount}) are required` });
     }
     
-    const item = await getProduct(productId);
+    const item = await getProduct(product);
     console.log(item);
-    // const item = await getProductById(safeProductId);
 
     if (!item) {
-      // console.log(await cartItemGetData(productId));
       return res.status(404).json({ message: "Item not found" });
     }
 
@@ -80,57 +78,50 @@ const addToCart = async (req, res) => {
   }
 };
 
-/* const removeFromCart = async (res, res) => {
+const removeFromCart = async (req, res) => {
   try {
-    const { existingCartId, productId, amount } = req.body;
+    const { existingCartId, product, amount } = req.body;
     let myCart = await Cart.findById(existingCartId);
 
     if (!myCart) {
       return res.status(400).json({ message: `cart ${existingCartId} doesnt exist`});
     }
 
-    if (!productId || !Number.isInteger(amount) || amount < 1) {
-      return res.status(400).json({ message: `productId (${productId}) and a positive integer amount (${amount}) are required` });
+    if (!product || !Number.isInteger(amount) || amount < 1) {
+      return res.status(400).json({ message: `product (${product}) and a positive integer amount (${amount}) are required` });
     }
   
-    const item = await getProductById(productId);
+    const item = await getProduct(product);
 
     if (!item) {
       return res.status(404).json({ message: "Item not found" });
     }
 
-    let index;
-    const alreadyItem = myCart.items.find((i) => i.itemId.equals(item._id));
-    for (let idx in myCart.items) {
-      i = idx.itemId.equals(item._id);
-      if (i) {
-        index = idx;// ??? theres smt else. anyway, not best method
-      }
-    };
+    const indexOfItem = myCart.items.findIndex((i) => i.itemId?.equals(item._id));
+    const alreadyItem = myCart.items[indexOfItem];
     
     if (alreadyItem) {
-      if (alreadyItem.amount >= amount) {
-        myCart.items
-      } else alreadyItem.amount -= amount;
-      
+      if (alreadyItem.amount <= amount) {
+        myCart.totalPrice -= alreadyItem.amount * item.price;
+        myCart.items.pull({ itemId: item._id });
+
+      } else {
+        alreadyItem.amount -= amount;
+        myCart.totalPrice -= amount * item.price;
+      }
+
     } else {
-      const cartItem = {
-        itemId: item._id,
-        name: item.name,
-        unitPrice: item.price,
-        amount: amount // ??? aint sure, do not confuse this with line_items
-      };
-      myCart.items.push(cartItem);
+      console.log("Nothing changed")
+      return res.status(200).json({ item: myCart.items, totalPrice: myCart.totalPrice })
     }
 
-    // updating total sum
-    myCart.totalPrice -= amount * item.price;
-
     await myCart.save();
-    return res.status(200).json({ item: myCart.items, totalPrice: myCart.totalPrice });
-  } catch (error) {
-    
-  }
-} */
+    return res.status(200).json({ item: myCart.items, totalPrice: myCart.totalPrice }); // !!! note: if pull used, above response won't be up to date, but db will contain the correct value. Using more verbose syntax (for later) allows to ask to return the "new" cart (output identical to db)
 
-export {addToCart, getCart};
+  } catch (error) {
+    console.error(error); // !!! I always forget this one
+    return res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+}
+
+export {addToCart, getCart, removeFromCart};
