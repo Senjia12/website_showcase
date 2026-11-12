@@ -12,7 +12,7 @@ app.use(cors({
 // routes import
 import brickRouter from './routes/brick.routes.js';
 import cartRouter from './routes/cart.routes.js';
-import checkoutRouter from './routes/checkout.routes.js'
+import checkoutRouter from './routes/checkout.routes.js';
 
 // routes declaration
 app.use("/bricks", brickRouter);

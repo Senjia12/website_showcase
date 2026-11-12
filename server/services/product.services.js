@@ -3,23 +3,26 @@ import Bricks from "../models/brick.models.js";
 
 // export const productIds = cartItems.map(item => item._id);
 
-export const getProductById = async (id) => {
+const getProductById = async (id) => {
   // const bricks = await Bricks.find({ _id: { $in: brickIds } });
   return await Bricks.findById(id);
 };
 
-const cartItemGetData = async (idOrName) => {
+// const cartItemGetData | { item.name, item.unitPrice }
 
+const getProduct = async (idOrName) => {
+
+  /* !!! regex when name > 12 caracters /^[0-9a-fA-F]{24}$/ */
   if (mongoose.isValidObjectId(idOrName)) {
-    idOrName = new mongoose.Types.ObjectId(idOrName);
-  }
-
-  if (idOrName == mongoose.Types.ObjectId) {
     const item = await Bricks.findById(idOrName);
-    return item.name, item.unitPrice;
-    
-  } else if (idOrName == String) {
-    const item = await Bricks.findOne({ name: idOrName })
+    return item;
+
+  } else if (typeof idOrName === "string") {
+    const item = await Bricks.findOne({ name: idOrName });
+    return item;
   }
 
-}
+  console.log("failed all if", typeof idOrName);
+};
+
+export { getProductById, getProduct }
