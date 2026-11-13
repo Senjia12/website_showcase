@@ -7,7 +7,7 @@ const brickGetInfo = async (req, res) => {
     const { id } = req.params;
 
     // retrieve brick product info
-    const brickInfo = await Brick.findOne({ _id: id }); // since _id is mongodb convention and id is in the api route (generic param name, REST convention)
+    const brickInfo = await Brick.findById(id); // since _id is mongodb convention and id is in the api route (generic param name, REST convention)
 
     if (!brickInfo) {
       return res.status(404).json({ message: "The brick product doesnt exist" });
@@ -34,14 +34,14 @@ const createBrick = async (req, res) => {
   try {
     
     // required fields
-    const { name, brickType, description, price, stock = 0, img } = req.body;
+    const { name, brickType, description, value, currency, stock = 0, img } = req.body;
 
     if (!name || !brickType || !description || !price || !img) {
       return res.status(400).json({ message: "All fields required: name, description, price and image link"})
     }
 
     // brick product existing?
-    const alreadyBrick = await Brick.findOne({ name });
+    const alreadyBrick = await Brick.findOne({ name }); // ???
 
     if (alreadyBrick) {
 
@@ -62,7 +62,10 @@ const createBrick = async (req, res) => {
         brickType,
         description,
         img,
-        price,
+        price: {
+          value,
+          currency
+        },
         stock
       });
 
@@ -90,7 +93,7 @@ const getAllBricks = async (req, res) => {
   }
 };
 
-const updateBrick = async (req, res) => {
+const updateBrick = async (req, res) => { // !!! untested and needs re-reading
   try {
     // making sure the body isnt empty
     // /!\ {} is truthy so we can't use just use req.body.length cuz js behaves differently with arrays and strings
@@ -99,14 +102,14 @@ const updateBrick = async (req, res) => {
         message: "No data provided for update"
       });
     };
-    const brick = await Post.findByIdAndUpdate(req.params.id, req.body, {new: true});
+    const brick = await Brick.findByIdAndUpdate(req.params.id, req.body, {new: true});
 
-    if (!post) return res.status(404).json({
-      message: "Post not found"
+    if (!brick) return res.status(404).json({
+      message: "Brick not found"
     });
 
     res.status(200).json({
-      message: "Post updated successfully", post
+      message: "Brick updated successfully", brick
     })
 
   } catch (error) {

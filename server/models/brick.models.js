@@ -20,10 +20,18 @@ const brickSchema = new Schema(
       trim: true
     },
 
-    price: {
-      type: Number,
-      required: true
-    },
+    price: [{
+      value: {
+        type: Number,
+        min: 1, // 1 cent
+        required: true
+      },
+      
+      currency: {
+        type: String,
+        default: "eur"
+      }
+    }],
 
     img: [{
       type: String,
@@ -41,6 +49,6 @@ const brickSchema = new Schema(
   }
 );
 
-const Brick = mongoose.model('Brick', brickSchema)
+const Brick = mongoose.model('Brick', brickSchema);
 
 export default Brick

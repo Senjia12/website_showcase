@@ -38,7 +38,7 @@ const orderSchema = new Schema({
   },
   currency: {
     type: String,
-    default: "eur" // default depending on country from where the customer is shopping upon cart's creation, else default from account settings
+    default: "eur" // "real" default depending on country from where the customer is shopping upon cart's creation, else default from account settings
   },
   status: {
     type: String,
@@ -55,7 +55,7 @@ const orderSchema = new Schema({
   account: {
     type: Schema.Types.ObjectId,
     ref: "Account",
-    required: false
+    required: false // default is false anyway right?
   }
 }, { timestamps: true});
 

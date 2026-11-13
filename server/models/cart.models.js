@@ -39,6 +39,11 @@ const cartSchema = new Schema(
     totalPrice: {
       type: Number,
       min: 0
+    },
+
+    currency: {
+      type: String,
+      default: "eur"
     }
   },
 

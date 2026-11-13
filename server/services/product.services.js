@@ -25,4 +25,12 @@ const getProduct = async (idOrName) => {
   console.log("failed all if", typeof idOrName);
 };
 
+const getPriceData = async (product, currency) => {
+  const myCurrency = currency ?? 'eur';
+  const productData = await getProduct(product);
+  const myPrice = productData.price.find((p) => p.currency === myCurrency)?.value; // ??? not sure of myself
+
+  return myPrice
+}
+
 export { getProductById, getProduct }
