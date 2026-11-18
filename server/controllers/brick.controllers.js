@@ -1,20 +1,21 @@
 import Brick from "../models/brick.models.js";
+import { getProduct, setPriceData } from "../services/product.services.js";
 
 const brickGetInfo = async (req, res) => {
   try {
     
     // required fields
-    const { id } = req.params;
+    const brickData = req.params.idOrName;
+    console.log("brickData", brickData);
 
     // retrieve brick product info
-    const brickInfo = await Brick.findById(id); // since _id is mongodb convention and id is in the api route (generic param name, REST convention)
-
-    if (!brickInfo) {
+    const brickInfo = await getProduct(brickData);
+    if (Object.keys(brickInfo).length === 0) {
       return res.status(404).json({ message: "The brick product doesnt exist" });
     }
 
-    res.status(200).json({
-      brickFoud: {
+    return res.status(200).json({
+      brickFound: {
         id: brickInfo._id,
         name: brickInfo.name,
         brickType: brickInfo.brickType,
@@ -25,8 +26,8 @@ const brickGetInfo = async (req, res) => {
     });
 
   } catch (error) {
-    console.log("ERROR:", error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
 
@@ -69,51 +70,59 @@ const createBrick = async (req, res) => {
         stock
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         message: "Product added successfully",
         newProduct: { id: newBrick._id, name: newBrick.name, brickType: newBrick.brickType, description: newBrick.description, img: newBrick.img, price: newBrick.price, stock: newBrick.stock }
       });
     };
 
   } catch (error) {
-    console.log("ERROR:", error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
 
 const getAllBricks = async (req, res) => {
   try {
     const bricks = await Brick.find();
-    res.status(200).json(bricks);
+
+    if (Object.keys(bricks).length === 0) {
+      return res.status(404).json({
+        message: "Not any brick found"
+      });
+    }
+    
+    return res.status(200).json(bricks);
 
   } catch (error) {
-    res.status(500).json({
+    console.error(error);
+    return res.status(500).json({
       message: "Internal server error"
     });
   }
 };
 
-const updateBrick = async (req, res) => { // !!! untested and needs re-reading
+const updateBrick = async (req, res) => {
   try {
-    // making sure the body isnt empty
-    // /!\ {} is truthy so we can't use just use req.body.length cuz js behaves differently with arrays and strings
-    if(Object.keys(req.body).length === 0) {// if 0 then none of the fields has a value   Object.keys converts object into an array of keys
-      return res.status(400).json({
-        message: "No data provided for update"
-      });
-    };
-    const brick = await Brick.findByIdAndUpdate(req.params.id, req.body, {new: true});
+    const { idOrName: brickData } = req.params;
+    const { prices } = req.body;
 
-    if (!brick) return res.status(404).json({
+    if (!Array.isArray(prices) || prices.length === 0) {
+      return res.status(400).json({ message: "prices must be a non-empty array" });
+    }
+    
+    const newBrick = await setPriceData(brickData, prices);
+    if (!newBrick) return res.status(404).json({
       message: "Brick not found"
     });
 
     res.status(200).json({
-      message: "Brick updated successfully", brick
-    })
+      message: "Brick updated successfully", newBrick
+    });
 
   } catch (error) {
-    res.status(500).json({
+    console.error(error);
+    return res.status(500).json({
       message: "Internal server error"
     });
   }

@@ -14,6 +14,15 @@ import brickRouter from './routes/brick.routes.js';
 import cartRouter from './routes/cart.routes.js';
 import checkoutRouter from './routes/checkout.routes.js';
 
+// debug middleware
+
+/*
+app.use((req, res, next) => {
+  console.log(req.method, req.originalUrl);
+  next();
+});
+*/
+
 // routes declaration
 app.use("/bricks", brickRouter);
 app.use("/shop", cartRouter);

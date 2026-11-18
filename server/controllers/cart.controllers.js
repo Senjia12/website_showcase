@@ -124,4 +124,8 @@ const removeFromCart = async (req, res) => {
   }
 }
 
-export {addToCart, getCart, removeFromCart};
+export {
+  addToCart,
+  getCart,
+  removeFromCart
+};

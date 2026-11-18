@@ -11,7 +11,7 @@ const createSession = async (req, res) => {
 
     const { cartId, email, account } = req.body;
 
-    const cart = await Cart.findById(cartId);    
+    const cart = await Cart.findById(cartId);
 
     if (!cart) {
       return res.status(404).json({

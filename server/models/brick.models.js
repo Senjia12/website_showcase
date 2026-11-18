@@ -21,15 +21,17 @@ const brickSchema = new Schema(
     },
 
     price: [{
-      value: {
-        type: Number,
-        min: 1, // 1 cent
-        required: true
-      },
+      _id: false,
       
       currency: {
         type: String,
         default: "eur"
+      },
+
+      value: {
+        type: Number,
+        min: 1, // 1 cent
+        required: true
       }
     }],
 
