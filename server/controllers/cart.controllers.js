@@ -1,5 +1,5 @@
 import { Cart } from '../models/cart.models.js'
-import { getProductById, getProduct } from '../services/product.services.js';
+import { getProduct } from '../services/product.services.js';
 
 const getCart = async (req, res) => { // !!! to display the cart actually
   try {

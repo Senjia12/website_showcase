@@ -35,7 +35,7 @@ const createBrick = async (req, res) => {
   try {
     
     // required fields
-    const { name, brickType, description, value, currency, stock = 0, img } = req.body;
+    const { name, brickType, description, price, stock = 0, img } = req.body;
 
     if (!name || !brickType || !description || !price || !img) {
       return res.status(400).json({ message: "All fields required: name, description, price and image link"})
@@ -56,19 +56,40 @@ const createBrick = async (req, res) => {
       });
 
     } else {
-      
+
+      if (!Array.isArray(price) || price.length === 0) {
+        return res.status(400).json({ message: "prices must be a non-empty array" });
+      }
+
+      const { currency: firstCurrency, value: firstValue } = price[0];
+
+      console.log("first price: ", firstCurrency, firstValue);
+
       // create new brick product
       const newBrick = await Brick.create({
         name,
         brickType,
         description,
         img,
-        price: {
-          value,
-          currency
-        },
+        price: [{
+          currency: firstCurrency,
+          value: firstValue
+        }],
         stock
       });
+
+      console.log(await getProduct(name));
+      
+      if (price.length > 1) {
+        const otherPrices = price.slice(1); // since the first price is already added (required field)
+        const newBrickWithAllPrices = await setPriceData(name, otherPrices);
+
+        console.log(newBrickWithAllPrices);
+        return res.status(201).json({
+          message: "Product added successfully",
+          newProduct: newBrickWithAllPrices
+        });
+      }
 
       return res.status(201).json({
         message: "Product added successfully",
