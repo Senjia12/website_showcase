@@ -5,7 +5,7 @@ const router = Router();
 
 router.post('/', createBrick);
 router.route('/all').get(getAllBricks);
-router.route('/:idOrName').patch(updateBrick)
+router.route('/:idOrName').patch(updateBrick);
 router.route('/:idOrName').get(brickGetInfo);
 
 export default router;
