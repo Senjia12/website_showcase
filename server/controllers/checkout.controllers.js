@@ -28,7 +28,7 @@ const createSession = async (req, res) => {
     }
 
     const orderItemsList = cart.items.map(({ itemId, name, unitPrice, amount }) => ({
-      itemId: new mongoose.Types.ObjectId(itemId),
+      itemId,
       name,
       unitPrice,
       amount
@@ -41,7 +41,8 @@ const createSession = async (req, res) => {
       items: orderItemsList,
       total: cart.totalPrice, // !!! nope, recomputing everything
       currency: cart.currency, // !!! same as above
-      status: "pending" // default anyway
+      status: "pending", // default anyways
+      customerEmail: email
     });
 
     // !!! need to check whether an account is tied to the user or if the user is creating one
@@ -54,7 +55,8 @@ const createSession = async (req, res) => {
         items: newSession.items,
         total: newSession.total,
         currency: newSession.currency,
-        status: newSession.status
+        status: newSession.status,
+        customerEmail
       }
     });
 
@@ -68,9 +70,10 @@ const createSession = async (req, res) => {
 // maybe could be used as check instead of session||cart existing
 const retrieveSession = async (req, res) => {
   try {
-    const sessionId = req.body;
+    const sessionId = req.params.id;
     const sessionCart = await Order.findById(sessionId);
     
+    return res.status(200).json({ sessionCart: sessionCart });
 
   } catch (error) {
     res.status(500).json({
