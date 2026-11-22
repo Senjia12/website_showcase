@@ -14,7 +14,6 @@ const getProduct = async (idOrName) => {
 
   /* !!! regex when name > 12 caracters /^[0-9a-fA-F]{24}$/ */
   if (mongoose.isValidObjectId(idOrName)) {
-    console.log(idOrName);
     const item = await Bricks.findById(idOrName);
     return item;
 
@@ -59,9 +58,36 @@ const setPriceData = async (productData, prices) => {
   return product;
 };
 
+const getStock = async (productData, amountReq = undefined) => {
+  const product = await getProduct(productData);
+
+  if (!product) {
+    return null;
+  }
+
+  const productStock = product.stock ?? 0;
+  console.log("productStock: ", productStock);
+
+  if (amountReq) {
+    amountReq = Number.parseInt(amountReq);
+    const enough = productStock >= amountReq;
+
+    // this is for UI and perhaps to notif shop admin
+    const stockStatus = (stock = productStock, amount = amountReq, isEnough = enough) => {
+      if (!isEnough) return "out"
+      if (stock - amount > stock * 0.1) return "ok"; // !!! 4later minimum stock alert setting
+      return "almost out";
+    }
+    return { enough: enough, productStock: productStock, stockStatus: stockStatus() };
+  }
+
+  return productStock;
+};
+
 export {
   getProductById,
   getProduct,
   getPriceData,
-  setPriceData
+  setPriceData,
+  getStock
 }

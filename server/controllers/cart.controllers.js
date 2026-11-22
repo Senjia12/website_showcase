@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { Cart } from '../models/cart.models.js'
 import { getProduct } from '../services/product.services.js';
-import { computeCartPrices } from '../services/shop.services.js';
+import { computeCartAmounts, computeCartPrices } from '../services/shop.services.js';
 
 const getCart = async (req, res) => { // !!! to display the cart actually
   try {
@@ -140,7 +140,9 @@ const validateCart = async (req, res) => {
   try {
     const cartWithValidPrices = await computeCartPrices(req.params.id);
 
-    return res.status(200).json({ cartWithValidPrices });
+    const cartWithValidStock = await computeCartAmounts(req.params.id);
+    
+    return res.status(200).json({ cartWithValidPrices, cartWithValidStock });
 
   } catch (error) {
     console.error(error);

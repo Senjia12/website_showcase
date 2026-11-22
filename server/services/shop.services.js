@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { Cart } from "../models/cart.models.js";
-import { getPriceData } from "./product.services.js";
+import { getPriceData, getStock } from "./product.services.js";
 
 const getCart = async (idOrName) => {
   /* !!! regex when name > 12 caracters /^[0-9a-fA-F]{24}$/ */
@@ -14,7 +14,7 @@ const getCart = async (idOrName) => {
   }
 
   return null;
-}
+};
 
 const computeCartPrices = async (cart) => {
   const fetchCart = await getCart(cart);
@@ -26,7 +26,7 @@ const computeCartPrices = async (cart) => {
   // later !!! long list of items so should fetch all products in one query (Brick.find({ _id: { $in: ids } }))
 
   for (const item of fetchCart.items) {
-    const itemPrice = await getPriceData(item.id || item.name, fetchCart.currency);
+    const itemPrice = await getPriceData(item.itemId || item.name, fetchCart.currency);
     
     if (!itemPrice) {
       unpriced.push(item.itemId ?? item.name);
@@ -47,4 +47,38 @@ const computeCartPrices = async (cart) => {
   return { cart: fetchCart, unpriced };
 };
 
-export { getCart, computeCartPrices };
+const computeCartAmounts = async (cart) => {
+  const fetchCart = await getCart(cart);
+  if (!fetchCart) return null;
+
+  const unavailable = [];
+
+  // !!!
+
+  for (const item of fetchCart.items) {
+    const itemStock = await getStock(item.itemId || item.name, item.amount);
+
+    if (!itemStock) {
+      unavailable.push({ itemId: item.itemId ?? item.name, missingAmount: null });
+      continue;
+
+    } else if (itemStock.productStock < item.amount) {
+      const missingAmount = item.amount - itemStock.productStock;
+      console.log("missingAmount: ", missingAmount);
+
+      unavailable.push({ item: item.itemId ?? item.name, missingAmount: missingAmount });
+      // 
+
+      if (itemStock.productStock !== 0) item.amount = itemStock;
+    }
+  }
+
+  // !!! substract missing amounts, update price amount accordingly, and remove items out of stock from the cart and session order
+  // await fetchCart.save();
+
+  if (unavailable.length > 0) console.log("Error while processing: ", unavailable);
+  
+  return { cart: fetchCart, unavailable };
+};
+
+export { getCart, computeCartPrices, computeCartAmounts };
