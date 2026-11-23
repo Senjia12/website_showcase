@@ -2,31 +2,27 @@ import mongoose from "mongoose";
 import { Cart } from "../models/cart.models.js";
 import { getPriceData, getStock } from "./product.services.js";
 
-const getCart = async (idOrName) => {
-  /* !!! regex when name > 12 caracters /^[0-9a-fA-F]{24}$/ */
-  if (mongoose.isValidObjectId(idOrName)) {
-    const cart = await Cart.findById(idOrName);
-    return cart;
+const getCart = async (id) => {
 
-  } else if (typeof idOrName === "string") {
-    const cart = await Cart.findOne({ name: idOrName });
+  if (mongoose.isValidObjectId(id)) {
+    const cart = await Cart.findById(id);
     return cart;
   }
 
   return null;
 };
 
-const computeCartPrices = async (cart) => {
-  const fetchCart = await getCart(cart);
-  if (!fetchCart) return null;
+const checkPrices = async (cart) => {
+  
+  // !!! raise an error if currency not supported
 
   const unpriced = [];
 
   // checking if each item has the correct unitPrice with same currency as the cart
   // later !!! long list of items so should fetch all products in one query (Brick.find({ _id: { $in: ids } }))
 
-  for (const item of fetchCart.items) {
-    const itemPrice = await getPriceData(item.itemId || item.name, fetchCart.currency);
+  for (const item of cart.items) {
+    const itemPrice = await getPriceData(item.itemId || item.name, cart.currency); // ??? an other, independant helper would be better (eur is default if no currency), so long check of currency supported is yet to be added
     
     if (!itemPrice) {
       unpriced.push(item.itemId ?? item.name);
@@ -38,47 +34,54 @@ const computeCartPrices = async (cart) => {
       item.unitPrice = itemPrice;
     }
   }
-
-  fetchCart.totalPrice = fetchCart.items.reduce((sum, i) => sum + i.unitPrice * i.amount, 0);
-  await fetchCart.save();
-
-  if (unpriced.length > 0) console.log("Error while processing: ", unpriced);
-
-  return { cart: fetchCart, unpriced };
+  return unpriced;
 };
 
-const computeCartAmounts = async (cart) => {
-  const fetchCart = await getCart(cart);
-  if (!fetchCart) return null;
-
+const checkAmounts = async (cart) => {
   const unavailable = [];
+  const toRm = [];
 
-  // !!!
-
-  for (const item of fetchCart.items) {
+  for (const item of cart.items) {
     const itemStock = await getStock(item.itemId || item.name, item.amount);
 
     if (!itemStock) {
-      unavailable.push({ itemId: item.itemId ?? item.name, missingAmount: null });
-      continue;
+      unavailable.push({
+        itemId: item.itemId ?? item.name,
+        missingAmount: null
+      });
+      toRm.push(item.itemId);
 
-    } else if (itemStock.productStock < item.amount) {
-      const missingAmount = item.amount - itemStock.productStock;
-      console.log("missingAmount: ", missingAmount);
+    } else if (!itemStock.enough) {
+      unavailable.push({
+        item: item.itemId ?? item.name,
+        missingAmount: item.amount - itemStock.productStock
+      });
 
-      unavailable.push({ item: item.itemId ?? item.name, missingAmount: missingAmount });
-      // 
+      if (itemStock.productStock === 0) {
+        toRm.push(item.itemId);
 
-      if (itemStock.productStock !== 0) item.amount = itemStock;
+      } else item.amount = itemStock.productStock;
     }
   }
-
-  // !!! substract missing amounts, update price amount accordingly, and remove items out of stock from the cart and session order
-  // await fetchCart.save();
-
-  if (unavailable.length > 0) console.log("Error while processing: ", unavailable);
+  for (const id of toRm) cart.items.pull({ itemId: id });
   
-  return { cart: fetchCart, unavailable };
+  return unavailable;
 };
 
-export { getCart, computeCartPrices, computeCartAmounts };
+const validateCart = async (cartId) => {
+  const cart = await getCart(cartId);
+  if (!cart) return null;
+
+  const unpriced = await checkPrices(cart);
+  console.log("unpriced: ", unpriced);
+
+  const unavailable = await checkAmounts(cart);
+  console.log("unavailable: ", unavailable);
+
+  cart.totalPrice = cart.items.reduce((sum,i) => sum + i.unitPrice * i.amount, 0);
+  await cart.save();
+  
+  return { cart, unpriced, unavailable };
+}
+
+export { getCart, checkPrices, checkAmounts, validateCart };

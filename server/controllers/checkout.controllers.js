@@ -1,17 +1,17 @@
-import mongoose from 'mongoose';
-import { Cart } from '../models/cart.models.js';
+// import mongoose from 'mongoose';
+// import { Cart } from '../models/cart.models.js';
 import { Order } from '../models/order.models.js'
+import { getCart, validateCart } from '../services/shop.services.js';
 
 const createSession = async (req, res) => {
   try {
-    /* using json in crud operations (postman),
-    so I need to convert the string back to object id (json doesnt have a native objectId type) */
-    // const cartId = new mongoose.Types.ObjectId(req.body.cartIdString);
-    // const sessionId = new mongoose.Types.ObjectId(req.body.sessionIdStrings);
 
     const { cartId, email, account } = req.body;
 
-    const cart = await Cart.findById(cartId);
+    const { cart: validCart, unpriced, unavailable } = await validateCart(cartId);
+    console.log("cart after validation: ", validCart, '\nunpriced', unpriced, '\nunavailable', unavailable);
+
+    const cart = await getCart(cartId);
 
     if (!cart) {
       return res.status(404).json({
@@ -39,24 +39,26 @@ const createSession = async (req, res) => {
     const newSession = await Order.create({
       cartId: cartId,
       items: orderItemsList,
-      total: cart.totalPrice, // !!! nope, recomputing everything
-      currency: cart.currency, // !!! same as above
-      status: "pending", // default anyways
+      total: cart.totalPrice,
+      currency: cart.currency,
+      status: "pending", // default anyway
       customerEmail: email
     });
 
-    // !!! need to check whether an account is tied to the user or if the user is creating one
+    cart.sessionId = newSession._id;
+    await cart.save();
 
+    // !!! need to check whether an account is tied to the user or if the user is creating one
 
     return res.status(201).json({
       message: "New session created",
       session: {
-        cartId: newSession._id,
+        cartId: newSession.cartId,
         items: newSession.items,
         total: newSession.total,
         currency: newSession.currency,
         status: newSession.status,
-        customerEmail
+        customerEmail: newSession.email
       }
     });
 

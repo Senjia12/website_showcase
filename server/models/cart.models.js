@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 
 const cartItemSchema = new Schema( 
-  { // ??? do I need to add _id field (since it is used and set in addToCart in cart controllers)
+  {
     itemId: {
       type: Schema.Types.ObjectId,
       ref: "Brick"
@@ -31,7 +31,8 @@ const cartItemSchema = new Schema(
 const cartSchema = new Schema(
   {
     sessionId: {
-      type: Number
+      type: Schema.Types.ObjectId,
+      ref: "Order"
     },
 
     items: [cartItemSchema],

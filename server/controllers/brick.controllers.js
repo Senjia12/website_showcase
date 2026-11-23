@@ -126,19 +126,38 @@ const getAllBricks = async (req, res) => {
 const updateBrick = async (req, res) => {
   try {
     const { idOrName: brickData } = req.params;
-    const { prices } = req.body;
+    console.log(brickData);
+    const { name, brickType, description, prices, img, stock } = req.body;
 
-    if (!Array.isArray(prices) || prices.length === 0) {
-      return res.status(400).json({ message: "prices must be a non-empty array" });
+    const brick = await getProduct(brickData);
+
+    if (stock) { // pos or neg
+      const alreadyStock = brick.stock;
+      let newStock = null;
+
+      if (stock < 0 && (alreadyStock + stock) < 0) {
+        // console.log("safeguard, brick stock can't be < 0");
+        newStock = brick.stock = 0;
+      } else newStock = alreadyStock + stock;
+
+      brick.stock = newStock;
+      await brick.save();
+      console.log("updated stock: ", brick.stock);
     }
-    
-    const newBrick = await setPriceData(brickData, prices);
-    if (!newBrick) return res.status(404).json({
-      message: "Brick not found"
-    });
+
+    if (prices) {
+      if (!Array.isArray(prices) || prices.length === 0) {
+        return res.status(400).json({ message: "prices must be a non-empty array" });
+      }
+      
+      const newBrick = await setPriceData(brickData, prices);
+      if (!newBrick) return res.status(404).json({
+        message: "Brick not found"
+      });
+    }
 
     res.status(200).json({
-      message: "Brick updated successfully", newBrick
+      message: "Brick updated successfully", brick: brick
     });
 
   } catch (error) {

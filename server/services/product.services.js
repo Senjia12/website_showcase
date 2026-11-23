@@ -26,13 +26,14 @@ const getProduct = async (idOrName) => {
 };
 
 const getPriceData = async (productData, currency) => {
-  const myCurrency = currency ?? 'eur';
+  const myCurrency = currency ?? 'eur'; // ??? /!\ side effects if use differ from original usecases
+  // could inject euro price instead of real cart value (payement is safe because prices are recomputed with cart's currency param)
   const product = await getProduct(productData);
   if (!product) return null;
 
   const myPrice = product.price.find((p) => p.currency === myCurrency)?.value;
-
-  return myPrice
+  
+  return myPrice;
 }
 
 // only admin access, for now I put this with other services for the client requests
@@ -40,7 +41,7 @@ const getPriceData = async (productData, currency) => {
 const setPriceData = async (productData, prices) => {
   const product = await getProduct(productData);
 
-  // prices is a string of objects [{currency: value}]
+  // prices is a string of objects [{ currency, value }]
   for (const { currency, value } of prices) {
     const alreadyCurrency = product.price.find((p) => p.currency === currency);
 
@@ -50,6 +51,8 @@ const setPriceData = async (productData, prices) => {
       console.log("Value set to: ", alreadyCurrency.value);
 
     } else {
+      // !!! here will be checked whether currency is supported
+
       product.price.push({ currency, value });
     }
   }
@@ -66,7 +69,6 @@ const getStock = async (productData, amountReq = undefined) => {
   }
 
   const productStock = product.stock ?? 0;
-  console.log("productStock: ", productStock);
 
   if (amountReq) {
     amountReq = Number.parseInt(amountReq);
